@@ -5,7 +5,7 @@ export const Hero = () => {
   return (
     <div className="pt-20">
       <div className="text-center px-8">
-        <div className="mb-6">
+        <div className="mb-6" data-aos="fade-down">
           <div className="relative inline-flex before:absolute before:inset-0">
             <Link
               href="https://www.google.com"
@@ -29,10 +29,16 @@ export const Hero = () => {
         <h1
           className="pd-4 font-extrabold tracking-tight text-transparent text-7xl
           lg:text-8xl bg-clip-text bg-gradient-to-r from-cyan-100 via-blue-700 to-cyan-100"
+          data-aos="fade-down"
+          // data-aos-delay="200"
         >
           Hi am babai
         </h1>
-        <p className="mb-8 text-lg text-zinc-300/40 font-medium">
+        <p
+          className="mb-8 text-lg text-zinc-300/40 font-medium"
+          data-aos="fade-down"
+          data-aos-delay="200"
+        >
           I am a full-stack developer, I build web applications using React,
           Next.js, Node.js, and MongoDB.
         </p>
@@ -42,6 +48,8 @@ export const Hero = () => {
             className="w-full items-center justify-center flex whitespace-nowrap transition 
             duration-150 ease-in-out font-medium rounded px-4 py-1.5 text-zinc-900 bg-gradient-to-r 
             from-white/80 via-white to-white/80 hover:bg-white group"
+            data-aos="fade-down"
+            data-aos-delay="300"
           >
             Book a free call{" "}
             <ArrowRight
