@@ -1,4 +1,4 @@
-"use client"; // This file will be executed on the client only
+"use client";
 
 export const Landing = () => {
   return (
