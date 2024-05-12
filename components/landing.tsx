@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { Hero } from "@/components/hero";
 import { EditVideo } from "./edited-video";
 import { Channels } from "./channels";
+import { Calendy } from "./calendy";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -22,6 +23,7 @@ export const Landing = () => {
         <Hero />
         <EditVideo />
         <Channels />
+        <Calendy />
       </div>
     </div>
   );
