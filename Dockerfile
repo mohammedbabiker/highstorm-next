@@ -2,8 +2,6 @@ FROM node:22-alpine AS base
 
 FROM base AS deps
 
-RUN apk add --no-cache libc6-compat
-
 WORKDIR /app
 
 ADD package*.json ./
@@ -40,6 +38,8 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
+ENV PORT=3000
 
-CMD HOSTNAME="0.0.0.0" node server.js
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
