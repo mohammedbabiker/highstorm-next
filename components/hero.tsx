@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { Particles } from "./particles";
 
 export const Hero = () => {
@@ -34,7 +34,7 @@ export const Hero = () => {
           data-aos="fade-down"
           // data-aos-delay="200"
         >
-          Hi am babai
+          Hi am Mohammed
         </h1>
         <p
           className="mb-8 text-lg text-zinc-300/40 font-medium"
