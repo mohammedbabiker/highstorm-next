@@ -1,0 +1,36 @@
+name: Puplish docker image to GitHub container registery
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+
+env:
+  REGISTRY: ghcr.io
+  RUNNER_OS: ubuntu-22.04
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  lint:
+    runs-on: ${{  env.RUNNER_OS }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: install dependencies
+        run: npm install
+
+      - name: Run ESLint
+        run: npm run lint
