@@ -1,8 +1,5 @@
-import XIcon from "@mui/icons-material/X";
-import YouTubeIcon from "@mui/icons-material/YouTube";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import TwitterIcon from "@mui/icons-material/Twitter";
 import EmailIcon from "@mui/icons-material/Email";
+import XIcon from "@mui/icons-material/X";
 import Link from "next/link";
 
 export const Footer = () => {
