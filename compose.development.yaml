@@ -1,11 +1,17 @@
 services:
   app:
-    container_name: highstrom-app-dev
+    container_name: highstorm-dev
     restart: unless-stopped
+    image: highstrom-dev
     build:
       context: .
       dockerfile: Dockerfile.dev
     command: npm run dev
     volumes:
-      - ./:/app
+      - .:/app
+      - /app/.next
       - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    ports:
+      - 3000:3000
