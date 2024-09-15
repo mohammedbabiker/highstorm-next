@@ -14,7 +14,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  RUNNER_OS: ubuntu-22.04
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -34,3 +33,22 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+
+  test:
+    runs-on: ubuntu-22.04
+    needs:
+      - lint
+    steps:
+      - name: Ceckout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: install dependencies
+        run: npm install
+
+      - name: Run Test
+        run: npm run test
