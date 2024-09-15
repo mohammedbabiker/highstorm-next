@@ -20,6 +20,11 @@ RUN npm run build
 
 FROM base AS runner
 
+# Labels
+LABEL org.opencontainers.image.source https://github.com/mohammedbabiker/highstorm-next
+LABEL org.opencontainers.image.authors="Mohammed Babiker"
+LABEL org.opencontainers.image.licenses="MIT"
+
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs
