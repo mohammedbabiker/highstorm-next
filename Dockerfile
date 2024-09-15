@@ -31,11 +31,6 @@ RUN npm run build
 # Final stage for running the app
 FROM base AS runner
 
-# Labels
-LABEL org.opencontainers.image.source https://github.com/mohammedbabiker/highstorm-next
-LABEL org.opencontainers.image.authors="Mohammed Babiker"
-LABEL org.opencontainers.image.licenses="MIT"
-
 # Set working directory in the container
 WORKDIR /app
 
