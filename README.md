@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next.js Dockerized App with CI/CD
 
-## Getting Started
+![Docker Hub](https://img.shields.io/docker/pulls/user/app)  
+![GitHub Registry](https://img.shields.io/badge/GHCR-available-blue)
 
-First, run the development server:
+This repository contains a **Next.js** application that is automatically built and pushed as a Docker image to **GitHub Container Registry (GHCR)** and **Docker Hub** via a GitHub Actions pipeline.
+
+## Features
+
+- **Next.js Application**: A server-side rendered React application framework optimized for both client-side and server-side rendering.
+- **Multi-Stage Docker Build**: Optimized Dockerfile that separates the build and production phases, reducing the final image size and ensuring fast, reliable deployments.
+- **Automated CI/CD Pipeline**: Automatically builds, tests, and pushes Docker images to Docker Hub and GHCR on every push to the `main` branch.
+- **Multi-Tagging**: Images are tagged with both `latest` and commit-specific tags (e.g., `sha256`).
+
+## How it Works
+
+1. **Development**: Code is pushed to the repository.
+2. **GitHub Actions Pipeline**:
+   - Lints and runs tests on the application.
+   - Builds the Docker image using a multi-stage build for production.
+   - Pushes the image to both Docker Hub and GitHub Container Registry.
+3. **Deployment**: The production-ready Docker image can be pulled and run in any containerized environment.
+
+## Pull the Image
+
+You can pull the latest image from Docker Hub or GHCR:
+
+**From Docker Hub:**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker pull mbabai/highstorm-next
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**From GitHub Container Registry:**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+docker pull ghcr.io/mohammedbabiker/highstorm-next:latest
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Running the Image Locally
 
-## Learn More
+To run the image locally, use the following command:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+docker run -dp 3000:3000 ghcr.io/mohammedbabiker/highstorm-next:latest
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This will start the application and expose it on `http://localhost:3000`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Environment Variables
 
-## Deploy on Vercel
+Ensure you configure the necessary environment variables for production:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `NEXT_PUBLIC_API_URL`: API endpoint for the application.
+- `NODE_ENV`: Set to `production` in the Dockerfile to ensure the app runs in production mode.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## CI/CD Pipeline Details
+
+- **Linting & Testing**: The pipeline first ensures code quality by running ESLint and the test suite.
+- **Docker Build**: The Docker image is built using a multi-stage build, optimized for production use.
+- **Pushing**: The image is automatically pushed to Docker Hub and GitHub Container Registry with multiple tags (e.g., `latest`, commit-specific SHA).
+
+## Contributions
+
+Feel free to fork this repository and contribute. Pull requests are welcome!
