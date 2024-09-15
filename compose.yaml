@@ -1,6 +1,8 @@
 services:
   app:
-    container_name: highstrom-app
+    container_name: highstorm-prod
+    restart: unless-stopped
+    image: highstorm-prod
     build:
       context: .
       dockerfile: Dockerfile
