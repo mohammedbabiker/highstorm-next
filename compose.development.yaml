@@ -5,6 +5,7 @@ services:
     image: highstorm-dev
     build:
       context: .
+      target: dev
       dockerfile: Dockerfile.dev
     command: npm run dev
     volumes:
