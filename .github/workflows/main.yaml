@@ -15,7 +15,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  DOCKER_IMAGE: mbabai/highstorm-next
 
 jobs:
   lint:
@@ -100,4 +99,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          tags: ${{ vars.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ vars.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          platforms: linux/amd64,linux/arm64/v8
