@@ -99,6 +99,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ${{ vars.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
-          tags: ${{ vars.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          tags: |
+            ${{ vars.DOCKER_USER }}/${{ env.IMAGE_NAME }}:latest
+            ${{ vars.DOCKER_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           platforms: linux/amd64,linux/arm64/v8
