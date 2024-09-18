@@ -8,8 +8,16 @@ services:
       target: dev
       dockerfile: Dockerfile.dev
     command: npm run dev
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./
+          target: /app/
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
     volumes:
-      - .:/app
       - /app/.next
       - /app/node_modules
     environment:
