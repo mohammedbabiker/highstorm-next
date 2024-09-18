@@ -18,8 +18,30 @@ env:
   DOCKER_IMAGE: mbabai/highstorm-next
 
 jobs:
-  lint:
+  check_mergeability:
+    if: github.event.pull_request.head.ref == 'dev'
     runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Check if pull request is mergeable
+        id: check_mergeability
+        run: |
+          PR_MERGEABLE=$(jq -r .pull_request.mergeable "$GITHUB_EVENT_PATH")
+          if [ "$PR_MERGEABLE" != "true" ]; then
+            echo "Pull request is not mergeable."
+            exit 1
+          else
+            echo "Pull request is mergeable."
+          fi
+
+  lint:
+    if: github.event.pull_request.head.ref == 'dev'
+    runs-on: ubuntu-22.04
+    needs: check_mergeability
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -36,6 +58,7 @@ jobs:
         run: npm run lint
 
   test:
+    if: github.event.pull_request.head.ref == 'dev'
     runs-on: ubuntu-22.04
     needs:
       - lint
@@ -54,6 +77,7 @@ jobs:
       - name: Run Test
         run: npm run test
   build:
+    if: github.event.pull_request.head.ref == 'dev'
     runs-on: ubuntu-22.04
     needs:
       - test
@@ -83,6 +107,7 @@ jobs:
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.GHCR_TOKEN }}
   push-to-dockerhub:
+    if: github.event_name == 'push'
     runs-on: ubuntu-22.04
     needs:
       - build
