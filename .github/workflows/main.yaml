@@ -29,12 +29,33 @@ jobs:
       - name: Check if pull request is mergeable
         id: check_mergeability
         run: |
-          PR_MERGEABLE=$(jq -r .pull_request.mergeable "$GITHUB_EVENT_PATH")
-          if [ "$PR_MERGEABLE" != "true" ]; then
-            echo "Pull request is not mergeable."
+          MERGEABLE_STATE="unknown"
+          RETRIES=5
+          DELAY=10
+
+          for i in $(seq 1 $RETRIES); do
+            PR_MERGEABLE=$(jq -r .pull_request.mergeable "$GITHUB_EVENT_PATH")
+
+            if [ "$PR_MERGEABLE" == "true" ]; then
+              echo "Pull request is mergeable."
+              MERGEABLE_STATE="mergeable"
+              break
+            elif [ "$PR_MERGEABLE" == "false" ]; then
+              echo "Pull request is not mergeable."
+              MERGEABLE_STATE="not_mergeable"
+              break
+            else
+              echo "Mergeability not determined yet. Retry $i/$RETRIES..."
+              sleep $DELAY
+            fi
+          done
+
+          # Fail if the mergeable status is not mergeable
+          if [ "$MERGEABLE_STATE" == "not_mergeable" ]; then
             exit 1
-          else
-            echo "Pull request is mergeable."
+          elif [ "$MERGEABLE_STATE" == "unknown" ]; then
+            echo "Could not determine mergeability after $RETRIES retries."
+            exit 1
           fi
 
   lint:
