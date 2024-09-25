@@ -1,9 +1,11 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { Particles } from "./particles";
 
 export const Hero = () => {
   return (
     <div className="pt-20">
+      <Particles className="absolute inset-0 -z-10" />
       <div className="text-center px-8">
         <div className="mb-6" data-aos="fade-down">
           <div className="relative inline-flex before:absolute before:inset-0">
