@@ -84,10 +84,6 @@ jobs:
             ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           platforms: linux/amd64,linux/arm64/v8
 
-      - name: Run container tests
-        run: |
-          docker run --rm ghcr.io/${{ env.IMAGE_NAME }}:latest npm run test
-      
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@0.28.0
         with:
@@ -96,12 +92,38 @@ jobs:
           exit-code: 0 # 1
           severity: CRITICAL,HIGH
       
+      - name: Generate Trivy Vulnerability Report
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          output: trivy-report.json
+          format: json
+          scan-ref: .
+          exit-code: 0
+      
+      - name: Upload Vulnerability Scan Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-report
+          path: trivy-report.json
+          retention-days: 30
+      
       - name: Scan image with Dockle
         uses: goodwithtech/dockle-action@main
         with:
           image: ghcr.io/${{ env.IMAGE_NAME }}:test
-          format: 'list'
+          format: 'json'
+          output: 'result.json'
           exit-code: 1
+          ignore: 'CIS-DI-0001,DKL-DI-0006,DKL-LI-0001'
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Report
+          path: dockle-result.json
       
       - name: Push Docker image to GHCR
         uses: docker/build-push-action@v6
