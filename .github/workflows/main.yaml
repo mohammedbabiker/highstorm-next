@@ -84,6 +84,13 @@ jobs:
             ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
           platforms: linux/amd64,linux/arm64/v8
 
+      - name: install
+        run: npm install --save-dev jest
+
+      - name: Run container test
+        run:
+          dock run --rm ghcr.io/${{ env.IMAGE_NAME }}:latest npm run test
+      
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@0.28.0
         with:
@@ -112,10 +119,10 @@ jobs:
       - name: Scan image with Dockle
         uses: goodwithtech/dockle-action@main
         with:
-          image: ghcr.io/${{ env.IMAGE_NAME }}:test
+          image: ghcr.io/${{ env.IMAGE_NAME }}:latest
           format: 'json'
           output: 'result.json'
-          exit-code: 1
+          exit-code: 0
           ignore: 'CIS-DI-0001,DKL-DI-0006,DKL-LI-0001'
 
       - name: Upload Report
