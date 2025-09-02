@@ -16,10 +16,12 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   DOCKER_IMAGE: mbabai/highstorm-next
+  VPS: ubuntu-24.04
+  
 
 jobs:
   Linting:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,7 +38,7 @@ jobs:
         run: npm run lint
 
   Testing:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - Linting
     steps:
@@ -55,7 +57,7 @@ jobs:
         run: npm run test
 
   Push-to-ghcr:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - Testing
     steps:
@@ -72,7 +74,36 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and push Docker image to GHCR
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: |
+            ghcr.io/${{ env.IMAGE_NAME }}:latest
+            ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          platforms: linux/amd64,linux/arm64/v8
+
+      - name: Run container tests
+        run: |
+          docker run --rm ghcr.io/${{ env.IMAGE_NAME }}:latest pytest tests/
+      
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ env.IMAGE_NAME }}:latest
+          format: table
+          exit-code: 0 # 1
+          severity: CRITICAL,HIGH
+      
+      - name: Scan image with Dockle
+        uses: goodwithtech/dockle-action@v0.1.0
+        with:
+          image: ghcr.io/${{ env.IMAGE_NAME }}:test
+          exit-code: 0 # 1
+      
+      - name: Push Docker image to GHCR
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -85,7 +116,7 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8
 
   Push-to-docker-hub:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - Push-to-ghcr
     steps:
@@ -104,5 +135,3 @@ jobs:
             ${{ env.DOCKER_IMAGE }}:latest
             ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
           platforms: linux/amd64,linux/arm64/v8
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
