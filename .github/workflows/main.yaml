@@ -98,10 +98,11 @@ jobs:
           severity: CRITICAL,HIGH
       
       - name: Scan image with Dockle
-        uses: goodwithtech/dockle-action@v0.1.0
+        uses: goodwithtech/dockle-action@main
         with:
           image: ghcr.io/${{ env.IMAGE_NAME }}:test
-          exit-code: 0 # 1
+          format: 'list'
+          exit-code: 1
       
       - name: Push Docker image to GHCR
         uses: docker/build-push-action@v6
