@@ -11,6 +11,7 @@ on:
 env:
   REGISTRY: ghcr.io
   GHCR_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+  DOCKERHUB_IMAGE_NAME: mbabai/highstorm-next
   IMAGE_NAME: ${{ github.repository }}
   DOCKER_IMAGE: mbabai/highstorm-next
   VPS: ubuntu-24.04
