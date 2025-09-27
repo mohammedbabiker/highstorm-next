@@ -1,26 +1,24 @@
-name: Puplish docker image to GitHub container registery
+name: CI, Build, Scan, and Publish Docker Image
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - "**.md"
+    branches: ["main"]
+    paths-ignore: ["**.md"]
   pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - "**.md"
+    branches: ["main"]
+    paths-ignore: ["**.md"]
 
 env:
   REGISTRY: ghcr.io
+  GHCR_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
   IMAGE_NAME: ${{ github.repository }}
   DOCKER_IMAGE: mbabai/highstorm-next
   VPS: ubuntu-24.04
   
 
 jobs:
-  Linting:
+  ci-checks:
+    name: Linting and Testing
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
@@ -30,36 +28,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: 'npm'
 
       - name: install dependencies
-        run: npm install
+        run: npm ci # npm install
 
       - name: Run ESLint
         run: npm run lint
 
-  Testing:
-    runs-on: ubuntu-24.04
-    needs:
-      - Linting
-    steps:
-      - name: Ceckout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run Test
+      - name: Run Tests
         run: npm run test
 
-  Push-to-ghcr:
+  build-and-scan:
+    name: Build & Scan Image
     runs-on: ubuntu-24.04
-    needs:
-      - Testing
+    needs: ci-checks
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,46 +55,43 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Cache Docker layers
+        uses: actions/cache@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run Node.js tests
-        run: npm run test
-
-      - name: Build the image
+      - name: Build image locally
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ./Dockerfile
           push: false
-          tags: |
-            ghcr.io/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          load: true
+          tags: ${{ env.GHCR_IMAGE_NAME }}:local-scan
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
           platforms: linux/amd64,linux/arm64/v8
-
-      - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ghcr.io/${{ env.IMAGE_NAME }}:latest
-          format: table
-          exit-code: 0 # 1
-          severity: CRITICAL,HIGH
       
-      - name: Generate Trivy Vulnerability Report
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      
+      - name: Scan image with Trivy for vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: "fs"
+          image-ref: ${{ env.GHCR_IMAGE_NAME }}:local-scan
+          format: 'table'
           output: trivy-report.json
-          format: json
-          scan-ref: .
-          exit-code: 0
-      
+          exit-code: 0 # 1 to Fail the build if vulnerabilities are found
+          severity: 'CRITICAL,HIGH'
+          # scan-type: "fs"
+        
       - name: Upload Vulnerability Scan Results
         uses: actions/upload-artifact@v4
         if: always()
@@ -118,12 +103,12 @@ jobs:
       - name: Scan image with Dockle
         uses: goodwithtech/dockle-action@main
         with:
-          image: ghcr.io/${{ env.IMAGE_NAME }}:latest
+          image: ${{ env.GHCR_IMAGE_NAME }}:local-scan
+          exit-code: 0 # 1 to Fail the build on issues
           format: 'json'
           output: 'result.json'
-          exit-code: 0
           ignore: 'CIS-DI-0001,DKL-DI-0006,DKL-LI-0001'
-
+        
       - name: Upload Report
         uses: actions/upload-artifact@v4
         if: always()
@@ -131,37 +116,76 @@ jobs:
           name: Report
           path: dockle-result.json
       
-      - name: Push Docker image to GHCR
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          secrets: |
-            GIT_AUTH_TOKEN=${{ secrets.GHCR_TOKEN }}
-          platforms: linux/amd64,linux/arm64/v8
 
-  Push-to-docker-hub:
+      - name: Save Docker image as artifact
+        run: docker save ${{ env.GHCR_IMAGE_NAME }}:local-scan -o image.tar
+      
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: image.tar
+
+  push-to-ghcr:
+    name: Push to GitHub Container Registry
     runs-on: ubuntu-24.04
-    needs:
-      - Push-to-ghcr
+    needs: build-and-scan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      packages: write
     steps:
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+    
+      - name: Load Docker image
+        run: docker load < image.tar
+
+      - name: Generate tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.GHCR_IMAGE_NAME }}
+      
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request' # Don't push on PRs
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      
+      - name: Push image to GHCR
+        run: docker push --all-tags ${{ env.GHCR_IMAGE_NAME }}
+        
+  push-to-dockerhub:
+    name: Push to Docker Hub
+    runs-on: ubuntu-24.04
+    needs: build-and-scan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image
+      
+      - name: Load Docker image
+        run: docker load < image.tar
+
+      - name: Generate tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_IMAGE_NAME }} # defin
+        
       - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-        
-      - name: List files in the directory
-        run: ls -la
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          push: true
-          tags: |
-            ${{ env.DOCKER_IMAGE }}:latest
-            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
-          #platforms: linux/amd64,linux/arm64/v8
+       
+      - name: Push image to Docker Hub
+        run: docker push --all-tags ${{ env.DOCKERHUB_IMAGE_NAME }}
