@@ -72,9 +72,7 @@ jobs:
           file: ./Dockerfile
           push: false
           load: true
-          tags: |
-            ${{ env.GHCR_IMAGE_NAME }}:local-scan
-            ${{ env.GHCR_IMAGE_NAME }}:latest
+          tags: ${{ env.GHCR_IMAGE_NAME }}:local-scan
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
@@ -109,7 +107,7 @@ jobs:
           image: ${{ env.GHCR_IMAGE_NAME }}:local-scan
           exit-code: 0 # 1 to Fail the build on issues
           format: 'json'
-          output: 'result.json'
+          output: 'dockle-result.json'
           ignore: 'CIS-DI-0001,DKL-DI-0006,DKL-LI-0001'
         
       - name: Upload Report
@@ -145,12 +143,14 @@ jobs:
       - name: Load Docker image
         run: docker load < image.tar
 
-      - name: Generate tags
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.GHCR_IMAGE_NAME }}
-      
+      - name: Re-tag image for GHCR
+        run: |
+          SOURCE_IMAGE_NAME="${{ env.GHCR_IMAGE_NAME }}:local-scan"
+          TARGET_IMAGE_NAME="${{ env.GHCR_IMAGE_NAME }}"
+          
+          SHORT_SHA="${{ github.sha_short }}"
+          docker tag "$SOURCE_IMAGE_NAME" "$TARGET_IMAGE_NAME:latest"
+          docker tag "$SOURCE_IMAGE_NAME" "$TARGET_IMAGE_NAME:$SHORT_SHA"
 
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request' # Don't push on PRs
@@ -181,7 +181,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKERHUB_IMAGE_NAME }} # defin
+          images: ${{ env.DOCKERHUB_IMAGE_NAME }}
       
       - name: Re-tag image for Docker Hub
         run: |
