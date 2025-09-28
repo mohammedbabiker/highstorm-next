@@ -148,7 +148,7 @@ jobs:
           SOURCE_IMAGE_NAME="${{ env.GHCR_IMAGE_NAME }}:local-scan"
           TARGET_IMAGE_NAME="${{ env.GHCR_IMAGE_NAME }}"
           
-          SHORT_SHA="${{ github.sha_short }}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           docker tag "$SOURCE_IMAGE_NAME" "$TARGET_IMAGE_NAME:latest"
           docker tag "$SOURCE_IMAGE_NAME" "$TARGET_IMAGE_NAME:$SHORT_SHA"
 
