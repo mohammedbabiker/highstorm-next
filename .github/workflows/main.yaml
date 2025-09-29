@@ -98,7 +98,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-report.sarif
+          sarif_file: 'trivy-report.sarif'
 
       - name: Upload Vulnerability Scan Results
         uses: actions/upload-artifact@v4
