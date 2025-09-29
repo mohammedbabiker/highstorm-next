@@ -9,18 +9,18 @@ on:
     paths-ignore: ["**.md"]
 
 env:
-  REGISTRY: ghcr.io
   GHCR_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
   DOCKERHUB_IMAGE_NAME: mbabai/highstorm-next
-  IMAGE_NAME: ${{ github.repository }}
-  DOCKER_IMAGE: mbabai/highstorm-next
-  VPS: ubuntu-24.04
   
 
 jobs:
   ci-checks:
     name: Linting and Testing
     runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
           cache: 'npm'
 
       - name: install dependencies
-        run: npm ci # npm install
+        run: npm ci
 
       - name: Run ESLint
         run: npm run lint
@@ -48,6 +48,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write 
 
     steps:
       - name: Checkout code
@@ -76,7 +77,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-          # platforms: linux/amd64,linux/arm64/v8
       
       - name: Move cache
         run: |
@@ -84,15 +84,22 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       
       - name: Scan image with Trivy for vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.50.1
         with:
           image-ref: ${{ env.GHCR_IMAGE_NAME }}:local-scan
           format: 'table'
+          sarif-report: 'trivy-report.sarif'
           output: trivy-report.json
-          exit-code: 0 # 1 to Fail the build if vulnerabilities are found
+          exit-code: 0
           severity: 'CRITICAL,HIGH'
-          # scan-type: "fs"
+          scan-type: 'image'
         
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-report.sarif
+
       - name: Upload Vulnerability Scan Results
         uses: actions/upload-artifact@v4
         if: always()
@@ -102,19 +109,19 @@ jobs:
           retention-days: 30
       
       - name: Scan image with Dockle
-        uses: goodwithtech/dockle-action@main
+        uses: goodwithtech/dockle-action@v1
         with:
           image: ${{ env.GHCR_IMAGE_NAME }}:local-scan
-          exit-code: 0 # 1 to Fail the build on issues
-          format: 'json'
+          exit-code: 0
+          format: 'table'
           output: 'dockle-result.json'
           ignore: 'CIS-DI-0001,DKL-DI-0006,DKL-LI-0001'
         
-      - name: Upload Report
+      - name: Upload dockle JSON report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Report
+          name: dockle-report
           path: dockle-result.json
       
 
@@ -168,6 +175,11 @@ jobs:
     runs-on: ubuntu-24.04
     needs: build-and-scan
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
