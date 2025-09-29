@@ -87,9 +87,8 @@ jobs:
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.GHCR_IMAGE_NAME }}:local-scan
-          format: 'table'
-          sarif-report: 'trivy-report.sarif'
-          output: trivy-report.json
+          format: 'sarif'
+          output: trivy-report.sarif
           exit-code: 0
           severity: 'CRITICAL,HIGH'
           scan-type: 'image'
@@ -100,13 +99,13 @@ jobs:
         with:
           sarif_file: 'trivy-report.sarif'
 
-      - name: Upload Vulnerability Scan Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: trivy-report
-          path: trivy-report.json
-          retention-days: 30
+      # - name: Upload Vulnerability Scan Results
+      #   uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: trivy-report
+      #     path: trivy-report.json
+      #     retention-days: 30
       
       - name: Scan image with Dockle
         uses: goodwithtech/dockle-action@main
