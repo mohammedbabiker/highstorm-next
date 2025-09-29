@@ -99,21 +99,14 @@ jobs:
         with:
           sarif_file: 'trivy-report.sarif'
 
-      # - name: Upload Vulnerability Scan Results
-      #   uses: actions/upload-artifact@v4
-      #   if: always()
-      #   with:
-      #     name: trivy-report
-      #     path: trivy-report.json
-      #     retention-days: 30
-      
       - name: Scan image with Dockle
         uses: goodwithtech/dockle-action@main
         with:
           image: ${{ env.GHCR_IMAGE_NAME }}:local-scan
           exit-code: 0
+          exit-level: 'warn'
           format: 'table'
-          output: 'dockle-result.json'
+          output: 'dockle-report.json'
           ignore: 'CIS-DI-0001,DKL-DI-0006,DKL-LI-0001'
         
       - name: Upload dockle JSON report
@@ -121,7 +114,7 @@ jobs:
         if: always()
         with:
           name: dockle-report
-          path: dockle-result.json
+          path: dockle-report.json
       
 
       - name: Save Docker image as artifact
