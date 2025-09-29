@@ -84,7 +84,7 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       
       - name: Scan image with Trivy for vulnerabilities
-        uses: aquasecurity/trivy-action@0.50.1
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.GHCR_IMAGE_NAME }}:local-scan
           format: 'table'
