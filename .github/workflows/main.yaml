@@ -109,7 +109,7 @@ jobs:
           retention-days: 30
       
       - name: Scan image with Dockle
-        uses: goodwithtech/dockle-action@v1
+        uses: goodwithtech/dockle-action@main
         with:
           image: ${{ env.GHCR_IMAGE_NAME }}:local-scan
           exit-code: 0
