@@ -2,7 +2,7 @@
 FROM node:22-alpine AS base
 
 # labels
-LABEL org.opencontainers.image.source https://github.com/mohammedbabiker/highstorm-next
+LABEL org.opencontainers.image.source=https://github.com/mohammedbabiker/highstorm-next
 LABEL org.opencontainers.image.title="highstorm next"
 LABEL org.opencontainers.image.description="This is a Docker image auto deploy via CI/CD pipelines, built from GitHub."
 LABEL org.opencontainers.image.authors="Mohammed Babiker"
